@@ -1,0 +1,11 @@
+faster-whisper==1.2.1
+ctranslate2==4.8.5
+nvidia-cublas-cu12==12.4.5.8
+nvidia-cudnn-cu12==9.5.1.17
+yt-dlp[default]==2026.10.26
+pysubs2
+rapidfuzz
+fastapi
+uvicorn
+pyinstaller
+pywebview

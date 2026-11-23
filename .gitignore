@@ -1,0 +1,7 @@
+.venv/
+data/
+models/
+wheels/
+tools/ffmpeg/
+__pycache__/
+.claude-flow/

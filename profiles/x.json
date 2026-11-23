@@ -1,0 +1,43 @@
+{
+  "name": "x",
+  "title": "X (Twitter)",
+  "width": 1920,
+  "height": 1080,
+  "fps": 30,
+  "fit": "pad",
+  "clip_len_sec": [
+    150,
+    330
+  ],
+  "loudness": {
+    "I": -16,
+    "TP": -1.5,
+    "LRA": 11,
+    "tolerance": 2.5
+  },
+  "max_size_mb": 1000,
+  "silence_max_sec": 3,
+  "fade_out_sec": 0.4,
+  "subtitles": {
+    "font": "Segoe UI",
+    "bold": true,
+    "size": 61,
+    "outline": 4,
+    "margin_v": 114,
+    "max_words": 7,
+    "max_chars": 42,
+    "max_cps": 20,
+    "pause_split_sec": 0.45
+  },
+  "rules_file": "rules/writing_rules.md",
+  "text_check": "x_post",
+  "censor": {
+    "motherfucker": "motherf*****",
+    "motherfucking": "motherf*****g",
+    "fucking": "f***ing",
+    "fuck": "f***",
+    "shit": "sh*t",
+    "bullshit": "bulls**t",
+    "porn": "p*rn"
+  }
+}

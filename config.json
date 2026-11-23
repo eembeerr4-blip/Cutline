@@ -1,0 +1,7 @@
+{
+  "port": 8765,
+  "profile": "x",
+  "ffmpeg": "tools/ffmpeg/ffmpeg.exe",
+  "whisper_model": "large-v3-turbo",
+  "whisper_fallback": "small"
+}

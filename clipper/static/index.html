@@ -1,0 +1,160 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Cutline</title>
+<link rel="stylesheet" href="/static/style.css">
+</head>
+<body data-token="__TOKEN__">
+<header class="top">
+  <div class="brand">Cutline <span id="profile" class="chip"></span></div>
+  <nav class="tabs" role="tablist">
+    <button class="tab on" data-tab="clip">Клип</button>
+    <button class="tab" data-tab="history">История</button>
+    <button class="tab" data-tab="storage">Хранилище</button>
+    <button class="tab" data-tab="system">Система</button>
+  </nav>
+</header>
+
+<div id="banner" class="banner" role="status" aria-live="polite" hidden></div>
+
+<main>
+  <section id="tab-clip" class="pane on">
+    <ol class="steps" id="steps">
+      <li data-step="1"><b>1</b> Источник</li>
+      <li data-step="2"><b>2</b> Момент</li>
+      <li data-step="3"><b>3</b> Монтаж</li>
+      <li data-step="4"><b>4</b> Текст</li>
+    </ol>
+
+    <div id="step-1" class="card step on">
+      <h2>Откуда берём видео</h2>
+      <p class="lead">Вставь ссылку или выбери файл. Дальше Cutline всё сделает сам.</p>
+      <label for="src">Ссылка на видео или пост</label>
+      <input id="src" type="text" placeholder="https://www.youtube.com/watch?v=… или https://x.com/…/status/…" autocomplete="off">
+      <div id="drop" class="drop">Или перетащи видеофайл сюда
+        <button class="ghost" id="pick">Выбрать файл…</button></div>
+      <div class="actions"><button class="main" id="go1">Скачать и расшифровать</button></div>
+    </div>
+
+    <div id="step-2" class="step">
+      <div class="two">
+        <div class="card">
+          <h2 id="ptitle">Где момент</h2>
+          <div id="heat-wrap" hidden><small class="muted">Чаще всего пересматривают (YouTube): клик ставит время</small><div id="heat" class="heat"></div></div>
+          <ol class="howto"><li>Справа нажми «Скопировать всю расшифровку» и вставь в чат с Claude.</li>
+            <li>Ответ Claude целиком вставь сюда и нажми главную кнопку: Cutline сам вырежет клип, наложит субтитры и подставит пост.</li></ol>
+          <label for="reply">Ответ Claude</label>
+          <textarea id="reply" rows="6" placeholder="START: 112&#10;END: 168&#10;ПОСТ:&#10;…"></textarea>
+          <div class="actions left"><button class="main" id="auto-run">Применить и собрать ролик</button></div>
+          <ul id="reply-out" class="checks"></ul>
+          <details class="claude"><summary>Другие способы</summary>
+            <div class="row"><button class="ghost" id="apply-reply">Только применить ответ, без сборки</button>
+              <button class="ghost" id="copy-link">Запрос по ссылке (для Claude, который сам открывает видео)</button></div>
+            <label for="q">Найти момент самому: цитата из видео по-английски или время (12:34 или 12:34-16:40)</label>
+            <div class="row"><input id="q" type="text" autocomplete="off"><button class="ghost" id="find">Найти</button></div>
+            <div id="hits"></div>
+            <div class="actions left"><button class="ghost" id="go2" disabled>Дальше: к монтажу</button></div>
+          </details>
+          <div id="range" class="range" hidden></div>
+        </div>
+        <div class="card strip-card">
+          <div class="bar2"><h2 style="margin:0;margin-right:auto">Расшифровка</h2><button class="ghost" id="copy-num">Скопировать всю расшифровку</button></div>
+          <div id="strip" class="strip" tabindex="0"></div>
+        </div>
+      </div>
+    </div>
+
+    <div id="step-3" class="step">
+      <div class="two">
+        <div class="card">
+          <div class="bar2 topbar"><h2 style="margin:0;margin-right:auto">Монтаж</h2>
+            <label class="inline" style="margin:0"><input type="checkbox" id="subs" checked> Субтитры</label>
+            <button class="ghost" id="prev3">Предпросмотр</button>
+            <button class="ghost" id="go3">Собрать ролик</button>
+            <button class="main" id="go3b" hidden>Дальше: текст</button></div>
+          <p id="sum3" class="range"></p>
+          <div id="video-wrap" hidden><h3 id="video-h">Готовый ролик</h3><video id="video" controls preload="metadata"></video></div>
+          <p id="out-info" class="range" hidden>Готовый файл лежит здесь:<br><b id="out-path"></b><br><button class="ghost" id="open-out">Открыть папку с готовым</button></p>
+          <ul id="checks" class="checks"></ul>
+          <details class="claude"><summary>Подправить границы клипа вручную</summary>
+            <p class="muted">Кликни по фразе справа (видео перемотается), затем нажми нужную кнопку. Обычно это не нужно: границы уже поставил Claude.</p>
+            <video id="srcv" controls preload="metadata"></video>
+            <p id="vhint" class="muted"></p>
+            <div class="row tools">
+              <button class="ghost" id="b-start" title="Горячая клавиша [">Клип начинается здесь [</button>
+              <button class="ghost" id="b-end" title="Горячая клавиша ]">Клип заканчивается здесь ]</button>
+            </div>
+            <div class="row tools"><span class="muted">Яркий момент в начало ролика (по желанию):</span>
+              <button class="ghost" id="o-start" title="Горячая клавиша ,">с этой фразы ,</button>
+              <button class="ghost" id="o-end" title="Горячая клавиша .">по эту фразу .</button>
+              <button class="ghost" id="o-clear">Убрать</button>
+            </div>
+          </details>
+          <details id="cropbox" class="claude"><summary>Обрезать края кадра (crop)</summary>
+            <div class="row"><button class="ghost" id="grab">Взять кадр с текущего места</button><button class="ghost" id="crop-clear">Сбросить</button><span id="crop-info" class="muted"></span></div>
+            <div id="frame-wrap" class="frame-wrap" hidden><img id="frame" alt="Кадр для рамки"><div id="crop-rect" class="crop-rect" hidden></div></div>
+          </details>
+          <details class="claude" id="doubt-box"><summary id="doubt-h">Слова, в которых расшифровка могла ошибиться</summary><ul id="doubts" class="doubts"></ul></details>
+        </div>
+        <div class="card strip-card"><h2>Расшифровка</h2><p class="muted">Клик по фразе ставит курсор и перематывает видео.</p><div id="strip3" class="strip" tabindex="0"></div></div>
+      </div>
+    </div>
+
+    <div id="step-4" class="step">
+      <div class="card">
+        <h2>Текст поста</h2>
+        <p class="muted">Пост из ответа Claude уже здесь. Поправь, если нужно, и сохрани: он ляжет рядом с роликом в «Готовые видео».</p>
+        <label for="post">Текст поста (английский, строка ---, затем RU: и перевод)</label>
+        <textarea id="post" rows="14" placeholder="Сюда попадает пост из ответа Claude. Если его нет, нажми «Скопировать пакет для чата», вставь в чат, а ответ вставь сюда."></textarea>
+        <div class="row"><button class="main" id="save-post">Проверить и сохранить</button>
+          <button class="ghost" id="check-post">Только проверить</button>
+          <button class="ghost" id="copy-pkg">Скопировать пакет для чата</button>
+          <button class="ghost" id="open-folder">Открыть папку с готовым</button></div>
+        <ul id="post-out" class="checks"></ul>
+      </div>
+    </div>
+  </section>
+
+  <section id="tab-history" class="pane"><div class="card"><h2>История</h2>
+    <div id="hist"></div></div></section>
+  <section id="tab-storage" class="pane"><div class="card">
+    <div class="bar2"><h2 style="margin:0">Хранилище</h2><span id="st-sum" class="chipline"></span></div>
+    <div class="two">
+      <div class="col">
+        <div class="bar2"><b>Проекты</b><span id="st-cnt" class="muted"></span>
+          <button class="ghost" id="st-all-p">Выбрать все</button><button class="main" id="st-whole">В корзину</button></div>
+        <div id="st-list" class="list"></div>
+      </div>
+      <div class="col">
+        <div class="bar2"><b>Корзина</b><span id="tr-cnt" class="muted"></span>
+          <button class="ghost" id="st-all-t">Выбрать все</button><button class="ghost" id="st-restore">Вернуть</button><button class="ghost danger" id="st-purge">Удалить навсегда</button></div>
+        <div id="st-trash" class="list"></div>
+      </div>
+    </div>
+    <div class="bar2 foot"><button class="ghost" id="st-open-out">Открыть папку «Готовые видео»</button><span class="sp"></span>
+      <span class="muted">Освободить место:</span><button class="ghost" id="st-cache">Очистить скачанные видео и звук</button>
+      <button class="ghost" id="st-older">Только старше</button><input id="st-days" type="text" value="30" aria-label="Дней"><span class="muted">дн.</span></div>
+  </div></section>
+  <section id="tab-system" class="pane"><div class="card"><h2>Всё ли работает</h2>
+    <p class="lead2">Зелёный: всё хорошо. Жёлтый: работать можно, но обрати внимание. Красный: нужно чинить, нажми «Скопировать диагностику» и вставь в чат.</p><ul id="sys" class="checks"></ul>
+    <div class="actions left"><button class="main" id="copy-diag">Скопировать диагностику</button><button class="ghost" id="upd-dl">Обновить загрузчик</button></div></div>
+    <div class="card" style="margin-top:16px"><h2>Настройки</h2>
+      <label for="set-out">Папка для готовых видео</label>
+      <div class="row"><input id="set-out" type="text" autocomplete="off"><button class="ghost" id="set-open">Открыть</button></div>
+      <label for="set-model">Модель расшифровки</label>
+      <select id="set-model"><option value="large-v3-turbo">large-v3-turbo: быстро и точно (рекомендуется)</option><option value="medium">medium: чуть медленнее</option><option value="small">small: самая лёгкая, для слабой видеокарты</option></select>
+      <label class="inline"><input type="checkbox" id="set-subs"> Субтитры включены по умолчанию</label>
+      <div class="actions left"><button class="main" id="set-save">Сохранить настройки</button></div></div></section>
+</main>
+
+<div id="modal" class="modal" hidden><div class="sheet" role="dialog" aria-modal="true">
+  <h3 id="m-t"></h3><p id="m-x" class="muted"></p><input id="m-in" type="text" hidden>
+  <div class="actions"><button class="ghost" id="m-no">Отмена</button><button class="main" id="m-yes">Да</button></div></div></div>
+<footer id="job" class="job" hidden><div class="bar"><i id="bar"></i></div><span id="jobtext"></span></footer>
+<script src="/static/app.js"></script>
+<script src="/static/montage.js"></script>
+<script src="/static/storage.js"></script>
+</body>
+</html>
