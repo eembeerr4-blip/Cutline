@@ -18,6 +18,7 @@ from . import pipeline as pl
 from .claude_reply import chat_package, link_request, parse_reply
 from .clipboard import copy_text
 from . import history, storage
+from .transcribe import WARM
 from .errors import ClipperError, explain
 from .ffmpeg import frame_png, probe
 from .jobs import JobRunner
@@ -86,7 +87,7 @@ def create_app(token: str, port: int) -> FastAPI:
     def ping():
         state["last_ping"] = time.time()
         p = load_profile(cfg["profile"])
-        return {"ok": True, "profile": p.title, "window": list(p.clip_len_sec), "subs_default": cfg.get("subtitles_default", True)}
+        return {"ok": True, "profile": p.title, "window": list(p.clip_len_sec), "subs_default": cfg.get("subtitles_default", True), "warm": dict(WARM)}
 
     @app.post("/api/bye")
     def bye():
@@ -286,7 +287,7 @@ def create_app(token: str, port: int) -> FastAPI:
 
     @app.get("/api/settings")
     def get_settings():
-        return {"output_dir": str(output_dir(cfg)), "whisper_model": cfg["whisper_model"], "subtitles_default": cfg.get("subtitles_default", True)}
+        return {"output_dir": str(output_dir(cfg)), "whisper_model": cfg["whisper_model"], "subtitles_default": cfg.get("subtitles_default", True), "preload_model": cfg.get("preload_model", True)}
 
     @app.post("/api/settings")
     async def set_settings(req: Request):
@@ -302,6 +303,7 @@ def create_app(token: str, port: int) -> FastAPI:
         if b.get("whisper_model") in ("large-v3-turbo", "medium", "small"):
             new["whisper_model"] = b["whisper_model"]
         new["subtitles_default"] = bool(b.get("subtitles_default", True))
+        new["preload_model"] = bool(b.get("preload_model", True))
         path = ROOT / "config.json"
         cur = json.loads(path.read_text(encoding="utf-8")) if path.exists() else {}
         cur.update(new)

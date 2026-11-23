@@ -122,3 +122,26 @@ class PreviewTests(unittest.TestCase):
         g = build_graph(p, [10.0], None, "subs.ass", "C:/Windows/Fonts", "854:480")
         self.assertLess(g.index("subtitles="), g.index("scale=854:480"))
         self.assertNotIn("854:480", build_graph(p, [10.0], None, None, "C:/Windows/Fonts"))
+
+
+class WarmUpTests(unittest.TestCase):
+    def test_warm_up_loads_once_and_release_unloads(self):
+        from unittest import mock
+        import clipper.transcribe as T
+        cfg = {"whisper_model": "large-v3-turbo", "min_free_vram_mb": 1}
+        with mock.patch.object(T, "prepare_device", return_value=("cuda", [])), mock.patch.object(T, "setup_cuda_dlls"), \
+                mock.patch.object(T, "load_model", return_value="MODEL") as lm:
+            T.warm_up(cfg)
+            self.assertEqual((T.WARM["state"], lm.call_count), ("ready", 1))
+            self.assertEqual(T._warm_model[("large-v3-turbo", "cuda")], "MODEL")
+        T.release_model()
+        self.assertEqual((T.WARM["state"], T._warm_model), ("off", {}))
+
+    def test_warm_up_without_gpu_does_not_load(self):
+        from unittest import mock
+        import clipper.transcribe as T
+        with mock.patch.object(T, "prepare_device", return_value=("cpu", ["нет видеокарты"])), mock.patch.object(T, "setup_cuda_dlls"), \
+                mock.patch.object(T, "load_model") as lm:
+            T.warm_up({"whisper_model": "large-v3-turbo"})
+            self.assertEqual((T.WARM["state"], lm.called), ("cpu", False))
+        T.release_model()

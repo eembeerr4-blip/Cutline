@@ -19,6 +19,7 @@ DEFAULT_CONFIG = {
     "fonts_dir": "C:/Windows/Fonts",
     "download_retry_pauses": [5, 20, 60],
     "prefetch_video": True,
+    "preload_model": True,
     "default_clip_tail_sec": 240,
 }
 

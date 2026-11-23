@@ -132,3 +132,8 @@ select option{background:var(--panel);color:var(--ink)}
 .steps li.ahead::after{content:" →";color:var(--accent)}
 .navrow{display:flex;justify-content:space-between;gap:10px}.navrow .fwd{margin-left:auto}
 .navrow:not(:has(button:not([hidden]))){display:none}
+
+.warm{margin:0 0 12px;padding:10px 14px;border-radius:12px;background:var(--fill);color:var(--ink);font-weight:500;display:flex;align-items:center;gap:10px}
+.warm.loading::before{content:"";width:14px;height:14px;border-radius:50%;border:2px solid var(--accent);border-top-color:transparent;animation:spin .8s linear infinite;flex:none}
+@keyframes spin{to{transform:rotate(360deg)}}
+.warm.cpu,.warm.failed{color:var(--warndot)}

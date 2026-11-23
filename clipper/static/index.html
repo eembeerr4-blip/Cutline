@@ -18,6 +18,7 @@
 </header>
 
 <div id="banner" class="banner" role="status" aria-live="polite" hidden></div>
+<div id="warm" class="warm" role="status" hidden></div>
 
 <main>
   <section id="tab-clip" class="pane on">
@@ -146,6 +147,7 @@
       <label for="set-model">Модель расшифровки</label>
       <select id="set-model"><option value="large-v3-turbo">large-v3-turbo: быстро и точно (рекомендуется)</option><option value="medium">medium: чуть медленнее</option><option value="small">small: самая лёгкая, для слабой видеокарты</option></select>
       <label class="inline"><input type="checkbox" id="set-subs"> Субтитры включены по умолчанию</label>
+      <label class="inline"><input type="checkbox" id="set-warm"> Загружать модель в видеопамять при запуске (старт дольше, расшифровка быстрее; при закрытии окна память освобождается)</label>
       <div class="actions left"><button class="main" id="set-save">Сохранить настройки</button></div></div></section>
 </main>
 

@@ -2,6 +2,7 @@
 import json
 import os
 import subprocess
+import threading
 import time
 from pathlib import Path
 
@@ -72,6 +73,37 @@ def prepare_device(cfg: dict) -> tuple[str, list[str]]:
     return "cuda", warns
 
 
+_LOCK = threading.RLock()
+WARM = {"state": "off", "text": ""}     # off | loading | ready | cpu | failed
+_warm_model: dict = {}
+
+
+def warm_up(cfg: dict) -> None:
+    """Прогрев при запуске: освобождает видеопамять от Ollama и грузит модель в видеокарту, пока человек ещё читает окно.
+    Модель живёт, пока открыто приложение; закрытие окна завершает процесс и видеопамять освобождается."""
+    with _LOCK:
+        WARM.update(state="loading", text="Загружаю модель расшифровки в видеопамять…")
+        try:
+            setup_cuda_dlls()
+            device, warns = prepare_device(cfg)
+            if device != "cuda":
+                WARM.update(state="cpu", text=(warns[0] if warns else "Видеокарта недоступна: расшифровка пойдёт на процессоре."))
+                return
+            _warm_model[(cfg["whisper_model"], "cuda")] = load_model(cfg["whisper_model"], "cuda", ROOT / "models")
+            WARM.update(state="ready", text="Модель в видеопамяти, можно работать.")
+        except Exception as e:  # noqa: BLE001 - прогрев не обязателен: модель загрузится при первой расшифровке
+            WARM.update(state="failed", text=f"Прогрев не удался ({type(e).__name__}): модель загрузится при первой расшифровке.")
+
+
+def release_model() -> None:
+    """Выгрузить прогретую модель из видеопамяти."""
+    import gc
+    with _LOCK:
+        _warm_model.clear()
+        WARM.update(state="off", text="")
+    gc.collect()
+
+
 def load_model(name: str, device: str, models_dir: Path):
     """Модель из models\\, потом из общего кэша Hugging Face, потом скачивание в models\\."""
     from faster_whisper import WhisperModel
@@ -110,20 +142,24 @@ def transcribe(video: Path, key: str, hint: str = "", progress=None, cfg: dict |
     setup_cuda_dlls()
     audio = decode_audio(video)
     duration = len(audio) / 16000
-    device, warns = prepare_device(cfg)
+    with _LOCK:                                   # если прогрев ещё идёт, ждём его
+        warm = _warm_model.get((cfg["whisper_model"], "cuda"))
+    device, warns = ("cuda", []) if warm is not None else prepare_device(cfg)
     plan = [(cfg["whisper_model"], device)] if device == "cuda" else []
     plan.append((cfg["whisper_fallback"], "cpu"))
     result, last = None, None
     for name, dev in plan:
         try:
             t0 = time.time()
-            model = load_model(name, dev, ROOT / "models")
+            model = warm if (warm is not None and (name, dev) == (cfg["whisper_model"], "cuda")) else load_model(name, dev, ROOT / "models")
             segs, lang = _collect(model, audio, hint[:240], cfg.get("language"), duration, progress)
             result = {"model": name, "device": dev, "language": lang, "duration": round(duration, 1),
                       "seconds_spent": round(time.time() - t0, 1), "warnings": warns, "segments": segs}
             break
         except Exception as e:  # noqa: BLE001 - CUDA/память: падаем на запасной вариант
             last = e
+            _warm_model.pop((name, dev), None)       # прогретая модель могла сломаться: дальше грузим заново
+            warm = None
             warns.append(f"{name} на {dev} не сработала ({type(e).__name__}); пробую запасной вариант.")
             unload_ollama(cfg)
     if result is None:

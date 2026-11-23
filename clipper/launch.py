@@ -186,6 +186,9 @@ def main() -> None:
     threading.Thread(target=server.run, daemon=True).start()
     while not server.started:
         time.sleep(0.1)
+    if cfg.get("preload_model", True):
+        from .transcribe import warm_up
+        threading.Thread(target=warm_up, args=(cfg,), daemon=True, name="warm").start()
     url = f"http://127.0.0.1:{port}/"
     if not run_native(url):
         run_in_browser(url, app)

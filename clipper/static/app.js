@@ -232,7 +232,16 @@ const loadSystem = guard(async () => { const r = await api("system"); list($("#s
 $("#copy-diag").onclick = guard(async () => { const r = await api("diagnostics"); await api("copy", { text: r.text }); banner({ what: "Диагностика скопирована: вставь в чат.", hint: "" }, true); });
 
 /* ---------- старт и «пульс» ---------- */
-async function beat() { try { const r = await api("ping"); $("#profile").textContent = r.profile; S.window = r.window; if (!window.__subsInit) { $("#subs").checked = r.subs_default !== false; window.__subsInit = true; } } catch (e) { banner({ what: "Потеряна связь с Cutline.", hint: "Закрой окно и запусти Cutline заново." }); } }
+let warmPrev = null;
+function showWarm(w) {
+  const el = $("#warm"), loading = w && w.state === "loading";
+  $("#go1").disabled = loading; $("#pick").disabled = loading;
+  if (!w || w.state === "off" || w.state === "ready") { el.hidden = true; if (warmPrev === "loading" && w.state === "ready") banner({ what: "Модель загружена.", hint: "Можно работать." }, true); }
+  else { el.hidden = false; el.className = "warm " + w.state; el.textContent = loading ? "Подожди, Cutline загружает модель расшифровки в видеопамять. Обычно 10–30 секунд." : w.text; }
+  warmPrev = w ? w.state : null;
+  if (loading) setTimeout(beat, 1500);
+}
+async function beat() { try { const r = await api("ping"); showWarm(r.warm); $("#profile").textContent = r.profile; S.window = r.window; if (!window.__subsInit) { $("#subs").checked = r.subs_default !== false; window.__subsInit = true; } } catch (e) { banner({ what: "Потеряна связь с Cutline.", hint: "Закрой окно и запусти Cutline заново." }); } }
 setStep(1); beat(); setInterval(beat, 8000);
 
 window.addEventListener("pagehide", () => navigator.sendBeacon(`/api/bye?t=${TOKEN}`));
@@ -275,10 +284,10 @@ setStep(S.step);
 /* ---------- настройки ---------- */
 const loadSettings = guard(async () => {
   const s = await api("settings");
-  $("#set-out").value = s.output_dir; $("#set-model").value = s.whisper_model; $("#set-subs").checked = s.subtitles_default;
+  $("#set-out").value = s.output_dir; $("#set-model").value = s.whisper_model; $("#set-subs").checked = s.subtitles_default; $("#set-warm").checked = s.preload_model !== false;
 });
 $("#set-save").onclick = guard(async () => {
-  const s = await api("settings", { output_dir: $("#set-out").value.trim(), whisper_model: $("#set-model").value, subtitles_default: $("#set-subs").checked });
+  const s = await api("settings", { output_dir: $("#set-out").value.trim(), whisper_model: $("#set-model").value, subtitles_default: $("#set-subs").checked, preload_model: $("#set-warm").checked });
   $("#subs").checked = s.subtitles_default; banner({ what: "Настройки сохранены.", hint: "" }, true);
 });
 $("#set-open").onclick = guard(() => api("open_output", {}));
